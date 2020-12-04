@@ -3,6 +3,15 @@ import boto3
 import json
 
 def handler(event, context):
+
+    my_config = Config(
+            region_name = 'eu-west-3',
+            retries = {
+                'max_attempts': 10,
+                'mode': 'standard'
+            }
+        )
+
     controllersIp = []
     client = boto3.client("ec2",
         config=my_config
@@ -34,9 +43,15 @@ def handler(event, context):
     ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     k = paramiko.RSAKey.from_private_key_file("/tmp/AWS-keypair.pem")
     ssh_client.connect(hostname=controllerIp, username="ubuntu", pkey=k)
+    # stdin,stdout,stderr=ssh_client.exec_command("sudo kubeadm token create --print-join-command") # Get token used by workers to join cluster
+    # lines = stdout.readlines()
+    # print(lines)
+    # joincmd = lines[0][:-2]
+    # joincmd = "sudo "+ joincmd
     stdin,stdout,stderr=ssh_client.exec_command(cmd)
     lines = stdout.readlines()
     ssh_client.close()
+
     finish = autoscaling.complete_lifecycle_action(
     AutoScalingGroupName=autoScalingGroupName,
     LifecycleActionResult='CONTINUE',
