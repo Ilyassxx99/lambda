@@ -34,10 +34,10 @@ def handler(event, context):
                 workerIp = instance["PublicIpAddress"]
 
     #cmd = 'echo `date` >> /home/ubuntu/my-date && ' + 'echo "'+str(workerIp)+'" >> /home/ubuntu/message'
-    s3.meta.client.download_file('kube-cluster-lambda-bucket', 'AWS-keypair.pem', '/tmp/AWS-keypair.pem')
+    s3.meta.client.download_file('kube-cluster-lambda-bucket', 'project-key.pem', '/tmp/project-key.pem')
     ssh_client = paramiko.SSHClient()
     ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    k = paramiko.RSAKey.from_private_key_file("/tmp/AWS-keypair.pem")
+    k = paramiko.RSAKey.from_private_key_file("/tmp/project-key.pem")
     ssh_client.connect(hostname=controllerIp, username="ubuntu", pkey=k)
     stdin,stdout,stderr=ssh_client.exec_command("sudo kubeadm token create --print-join-command") # Get token used by workers to join cluster
     lines = stdout.readlines()
