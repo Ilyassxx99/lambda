@@ -4,32 +4,33 @@ import json
 
 def handler(event, context):
 
-    my_config = Config(
-            region_name = 'eu-west-3',
-            retries = {
-                'max_attempts': 10,
-                'mode': 'standard'
-            }
-        )
-
-    controllersIp = []
-    client = boto3.client("ec2",
-        config=my_config
-        )
-    autoscaling  = boto3.client('autoscaling',
-        config=my_config
-        )
+    # my_config = Config(
+    #         region_name = 'eu-west-3',
+    #         retries = {
+    #             'max_attempts': 10,
+    #             'mode': 'standard'
+    #         }
+    #     )
+    #
+    # controllersIp = []
+    # client = boto3.client("ec2",
+    #     config=my_config
+    #     )
+    # autoscaling  = boto3.client('autoscaling',
+    #     config=my_config
+    #     )
     s3 = boto3.resource('s3')
-    controllers = client.describe_instances(Filters=[
-    {'Name': 'tag:Type', 'Values': ['Controller']},
-    {'Name': 'instance-state-name', 'Values': ['running']}
-    ])
-    print("----------------event----------------")
-    print(event)
-    for reservation in controllers["Reservations"]:
-        for instance in reservation["Instances"]:
-            controllersIp.append(instance["PublicIpAddress"])
-    controllerIp=controllersIp[0]
+    # controllers = client.describe_instances(Filters=[
+    # {'Name': 'tag:Type', 'Values': ['Controller']},
+    # {'Name': 'instance-state-name', 'Values': ['running']}
+    # ])
+    # print("----------------event----------------")
+    # print(event)
+    # for reservation in controllers["Reservations"]:
+    #     for instance in reservation["Instances"]:
+    #         controllersIp.append(instance["PublicIpAddress"])
+    # controllerIp=controllersIp[0]
+    controllerIp="15.236.92.22"
     message =json.loads(event['Records'][0]['Sns']['Message'])
     instanceId = message['EC2InstanceId']
     autoScalingGroupName = message['AutoScalingGroupName']
@@ -52,10 +53,10 @@ def handler(event, context):
     lines = stdout.readlines()
     ssh_client.close()
 
-    finish = autoscaling.complete_lifecycle_action(
-    AutoScalingGroupName=autoScalingGroupName,
-    LifecycleActionResult='CONTINUE',
-    LifecycleActionToken=lifecycleActionToken,
-    LifecycleHookName=lifecycleHookName,
-    )
+    # finish = autoscaling.complete_lifecycle_action(
+    # AutoScalingGroupName=autoScalingGroupName,
+    # LifecycleActionResult='CONTINUE',
+    # LifecycleActionToken=lifecycleActionToken,
+    # LifecycleHookName=lifecycleHookName,
+    # )
 
