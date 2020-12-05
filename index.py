@@ -12,8 +12,6 @@ def handler(event, context):
     {'Name': 'tag:Type', 'Values': ['Controller']},
     {'Name': 'instance-state-name', 'Values': ['running']}
     ])
-    print("----------------event----------------")
-    print(event)
     for reservation in controllers["Reservations"]:
         for instance in reservation["Instances"]:
             controllersIp.append(instance["PublicIpAddress"])
@@ -24,8 +22,6 @@ def handler(event, context):
     autoScalingGroupName = message['AutoScalingGroupName']
     lifecycleHookName = message['LifecycleHookName']
     lifecycleActionToken = message['LifecycleActionToken']
-    print("----------------message----------------")
-    print(message)
 
     workers = client.describe_instances(
             InstanceIds=[
@@ -54,6 +50,7 @@ def handler(event, context):
     lines = stdout.readlines()
     stdin,stdout,stderr=ssh_client.exec_command(joincmd)
     lines = stdout.readlines()
+    print(lines)
     ssh_client.close()
 
     finish = autoscaling.complete_lifecycle_action(
