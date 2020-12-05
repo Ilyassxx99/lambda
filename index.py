@@ -37,18 +37,22 @@ def handler(event, context):
             if (instance['InstanceId'] == instanceId):
                 workerIp = instance["PublicIpAddress"]
 
-    cmd = 'echo Sat Dec  5 02:09:55 PST 2020 >> /home/ubuntu/my-date && ' + 'echo "'+str(workerIp)+'" >> /home/ubuntu/message'
+    #cmd = 'echo `date` >> /home/ubuntu/my-date && ' + 'echo "'+str(workerIp)+'" >> /home/ubuntu/message'
     s3.meta.client.download_file('kube-cluster-lambda-bucket', 'AWS-keypair.pem', '/tmp/AWS-keypair.pem')
     ssh_client = paramiko.SSHClient()
     ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     k = paramiko.RSAKey.from_private_key_file("/tmp/AWS-keypair.pem")
     ssh_client.connect(hostname=controllerIp, username="ubuntu", pkey=k)
-    # stdin,stdout,stderr=ssh_client.exec_command("sudo kubeadm token create --print-join-command") # Get token used by workers to join cluster
-    # lines = stdout.readlines()
-    # print(lines)
-    # joincmd = lines[0][:-2]
-    # joincmd = "sudo "+ joincmd
-    stdin,stdout,stderr=ssh_client.exec_command(cmd)
+    stdin,stdout,stderr=ssh_client.exec_command("sudo kubeadm token create --print-join-command") # Get token used by workers to join cluster
+    lines = stdout.readlines()
+    print(lines)
+    joincmd = lines[0][:-2]
+    joincmd = "sudo "+ joincmd
+    ssh_client.close()
+    ssh_client.connect(hostname=workerIp, username="ubuntu", pkey=k)
+    stdin,stdout,stderr=ssh_client.exec_command("sudo hostnamectl set-hostname worker-{}".format(instanceId)) # Change worker hostname
+    lines = stdout.readlines()
+    stdin,stdout,stderr=ssh_client.exec_command(joincmd)
     lines = stdout.readlines()
     ssh_client.close()
 
@@ -58,3 +62,4 @@ def handler(event, context):
     LifecycleActionToken=lifecycleActionToken,
     LifecycleHookName=lifecycleHookName,
     )
+
