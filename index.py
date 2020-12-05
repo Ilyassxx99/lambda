@@ -4,21 +4,9 @@ import json
 
 def handler(event, context):
 
-    my_config = Config(
-            region_name = 'eu-west-3',
-            retries = {
-                'max_attempts': 10,
-                'mode': 'standard'
-            }
-        )
-
     controllersIp = []
-    client = boto3.client("ec2",
-        config=my_config
-        )
-    autoscaling  = boto3.client('autoscaling',
-        config=my_config
-        )
+    client = boto3.client("ec2")
+    autoscaling  = boto3.client('autoscaling')
     s3 = boto3.resource('s3')
     controllers = client.describe_instances(Filters=[
     {'Name': 'tag:Type', 'Values': ['Controller']},
@@ -38,7 +26,18 @@ def handler(event, context):
     lifecycleActionToken = message['LifecycleActionToken']
     print("----------------message----------------")
     print(message)
-    cmd = 'echo `date` >> /home/ubuntu/my-date && ' + 'echo "'+str(instanceId)+'" >> /home/ubuntu/message'
+
+    workers = client.describe_instances(
+            InstanceIds=[
+                instanceId,
+                ],
+    )
+    for reservation in workers["Reservations"]:
+        for instance in reservation["Instances"]:
+            if (instance['InstanceId'] == instanceId):
+                workerIp = instance["PublicIpAddress"]
+
+    cmd = 'echo Sat Dec  5 02:09:55 PST 2020 >> /home/ubuntu/my-date && ' + 'echo "'+str(workerIp)+'" >> /home/ubuntu/message'
     s3.meta.client.download_file('kube-cluster-lambda-bucket', 'AWS-keypair.pem', '/tmp/AWS-keypair.pem')
     ssh_client = paramiko.SSHClient()
     ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -59,4 +58,3 @@ def handler(event, context):
     LifecycleActionToken=lifecycleActionToken,
     LifecycleHookName=lifecycleHookName,
     )
-
